@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="theme-color" content="#2bb3e0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Судоку">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Судоку</title>
+<style>
+:root{--bg:linear-gradient(180deg,#7fe0f7 0%,#2bb3e0 40%,#fbe8b8 72%,#f6d28a 100%);--fg:#0b4f6c;--line:#a6dcea;--thick:#0b5d7a;--sel:#ffd166;--rel:#d4f5f2;--same:#9ff0e0;--given:#0b3d55;--user:#0a6fc2;--hint:#f0751a;--bad:#e02b3a;--btn:linear-gradient(#ffffff,#c9f2f7)}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg);background-attachment:fixed;color:var(--fg);display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px;padding-top:calc(16px + env(safe-area-inset-top,0px));min-height:100vh}
+h1{font-size:26px;margin:4px 0;color:#0b4f6c;text-shadow:0 2px 0 #fff6d6;letter-spacing:1px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+button,select{font:inherit;padding:8px 16px;border:2px solid #2aa7c9;border-radius:999px;background:var(--btn);color:#0b4f6c;cursor:pointer;box-shadow:0 3px 0 #1d7fa0;font-weight:600}
+button:disabled{opacity:.35;cursor:default}
+#board{display:grid;grid-template-columns:repeat(9,1fr);width:min(92vw,450px);aspect-ratio:1;border:3px solid var(--thick);border-radius:10px;overflow:hidden;background:#fffdf5;box-shadow:0 10px 24px rgba(0,60,90,.35)}
+.cell{display:flex;align-items:center;justify-content:center;font-size:clamp(20px,7vw,36px);font-weight:700;cursor:pointer;border-right:1px solid var(--line);border-bottom:1px solid var(--line);user-select:none}
+.cell.rb{border-right:3px solid var(--thick)}
+.cell.bb{border-bottom:3px solid var(--thick)}
+.cell.given{font-weight:700;color:var(--given)}
+.cell.user{color:var(--user)}
+.cell.hint{color:var(--hint)}
+.cell.wrong{color:var(--bad)}
+.cell.rel{background:var(--rel)}
+.cell.same{background:var(--same)}
+.cell.sel{background:var(--sel)}
+#pad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:min(92vw,450px)}
+.num{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;width:100%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#b98a5a,#7a4a25 60%,#4e2c12);border:2px solid #3a200c;color:#fff7e6;box-shadow:inset -6px -8px 14px rgba(0,0,0,.35),0 4px 0 #2f1a0a}
+.num b{font-size:20px}
+.num small{font-size:16px;font-weight:700;opacity:1;color:#ffe9b8}
+.scene{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.scene svg{width:100%;height:100%}
+#status{min-height:24px;font-weight:600;text-align:center}
+#info{font-size:14px;opacity:.85}
+</style>
+</head>
+<body>
+<div class="scene"><svg viewBox="0 0 400 800" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fd6f5"/><stop offset="1" stop-color="#d9f6ff"/></linearGradient><linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3cc6e8"/><stop offset="1" stop-color="#0a6fa8"/></linearGradient><g id="palm"><path d="M0 0 Q12 180 30 420" stroke="#8a5a2b" stroke-width="14" fill="none" stroke-linecap="round"/><g fill="#2e9e5b"><path d="M0 0 Q-40 -30 -95 -10 Q-50 -5 0 8Z"/><path d="M0 0 Q-30 -55 -60 -70 Q-45 -35 0 8Z"/><path d="M0 0 Q30 -55 70 -60 Q40 -30 0 8Z"/><path d="M0 0 Q40 -30 100 -12 Q50 -4 0 8Z"/><path d="M0 0 Q0 -60 -10 -90 Q15 -50 8 0Z"/></g><circle cx="-6" cy="12" r="7" fill="#6b4226"/><circle cx="8" cy="14" r="7" fill="#6b4226"/></g></defs><rect width="400" height="800" fill="url(#skyG)"/><circle cx="320" cy="90" r="38" fill="#ffe27a"/><rect y="520" width="400" height="180" fill="url(#seaG)"/><g fill="none" stroke="#ffffff" stroke-opacity=".45" stroke-width="2"><path d="M10 560 q12 -9 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0"/><path d="M40 610 q12 -9 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0"/></g><path d="M0 650 Q100 615 200 650 T400 650 V800 H0Z" fill="#f7dc9c"/><use href="#palm" transform="translate(55 250) scale(1.5)"/><use href="#palm" transform="translate(345 270) scale(-1.5 1.5)"/><g fill="none" stroke="#2f4f6f" stroke-width="2.5" stroke-linecap="round"><path d="M110 170 q8 -8 16 0 q8 -8 16 0"/><path d="M160 130 q7 -7 14 0 q7 -7 14 0"/><path d="M250 190 q9 -9 18 0 q9 -9 18 0"/><path d="M200 230 q6 -6 12 0 q6 -6 12 0"/></g></svg></div>
+<h1>🐚 Судоку на пляже 🏖️</h1>
+<div class="controls">
+  <select id="diff">
+    <option value="easy">Легко</option>
+    <option value="medium" selected>Средне</option>
+    <option value="hard">Сложно</option>
+    <option value="expert">Эксперт</option>
+  </select>
+  <button id="newBtn">Новая игра</button>
+  <button id="hintBtn">Подсказка</button>
+</div>
+<div id="board"></div>
+<div id="pad"></div>
+<div id="status"></div>
+<div id="info">Подсказок использовано: <span id="hintCount">0</span></div>
+
+<script>
+const CLUES = { easy: 40, medium: 32, hard: 26, expert: 22 };
+let sol = [], grid = [], given = [], hinted = [], sel = -1, hints = 0, won = false;
+const $ = id => document.getElementById(id);
+
+function shuffle(a){
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Можно ли поставить v в клетку i
+function ok(b, i, v){
+  const r = (i / 9) | 0, c = i % 9, br = r - r % 3, bc = c - c % 3;
+  for (let k = 0; k < 9; k++) {
+    if (b[r * 9 + k] === v || b[k * 9 + c] === v) return false;
+  }
+  for (let dr = 0; dr < 3; dr++)
+    for (let dc = 0; dc < 3; dc++)
+      if (b[(br + dr) * 9 + bc + dc] === v) return false;
+  return true;
+}
+
+// Заполнение пустой сетки случайным корректным решением
+function fill(b){
+  const i = b.indexOf(0);
+  if (i < 0) return true;
+  for (const v of shuffle([1,2,3,4,5,6,7,8,9])) {
+    if (ok(b, i, v)) {
+      b[i] = v;
+      if (fill(b)) return true;
+      b[i] = 0;
+    }
+  }
+  return false;
+}
+
+// Подсчёт решений (останавливается на limit) — для проверки единственности
+function countSol(b, limit){
+  let n = 0;
+  const go = () => {
+    const i = b.indexOf(0);
+    if (i < 0) { n++; return n >= limit; }
+    for (let v = 1; v <= 9; v++) {
+      if (ok(b, i, v)) {
+        b[i] = v;
+        const stop = go();
+        b[i] = 0;
+        if (stop) return true;
+      }
+    }
+    return false;
+  };
+  go();
+  return n;
+}
+
+function newGame(){
+  sol = new Array(81).fill(0);
+  fill(sol);
+  grid = sol.slice();
+  const target = 81 - CLUES[$('diff').value];
+  let removed = 0;
+  for (const i of shuffle([...Array(81).keys()])) {
+    if (removed >= target) break;
+    const keep = grid[i];
+    grid[i] = 0;
+    if (countSol(grid.slice(), 2) === 1) removed++;
+    else grid[i] = keep; // без этого решение бы не было единственным
+  }
+  given = grid.map(v => v !== 0);
+  hinted = new Array(81).fill(false);
+  hints = 0;
+  sel = -1;
+  won = false;
+  $('status').textContent = '';
+  render();
+}
+
+// Сколько цифр d ещё нужно поставить (верно поставленные не считаются)
+function remaining(d){
+  let placed = 0;
+  for (let i = 0; i < 81; i++) if (grid[i] === d && sol[i] === d) placed++;
+  return 9 - placed;
+}
+
+function render(){
+  const board = $('board');
+  board.innerHTML = '';
+  const sr = sel >= 0 ? (sel / 9) | 0 : -1;
+  const sc = sel >= 0 ? sel % 9 : -1;
+  const selV = sel >= 0 ? grid[sel] : 0;
+
+  for (let i = 0; i < 81; i++) {
+    const r = (i / 9) | 0, c = i % 9;
+    const cls = ['cell'];
+    if (c % 3 === 2 && c < 8) cls.push('rb');
+    if (r % 3 === 2 && r < 8) cls.push('bb');
+
+    if (given[i]) cls.push('given');
+    else if (hinted[i]) cls.push('hint');
+    else if (grid[i]) cls.push(grid[i] === sol[i] ? 'user' : 'wrong');
+
+    const related = sel >= 0 && (r === sr || c === sc ||
+      ((r / 3 | 0) === (sr / 3 | 0) && (c / 3 | 0) === (sc / 3 | 0)));
+    if (i === sel) cls.push('sel');
+    else if (selV && grid[i] === selV) cls.push('same');
+    else if (related) cls.push('rel');
+
+    const d = document.createElement('div');
+    d.className = cls.join(' ');
+    d.textContent = grid[i] || '';
+    d.onclick = () => select(i);
+    board.appendChild(d);
+  }
+
+  for (let d = 1; d <= 9; d++) {
+    const rem = remaining(d);
+    $('rem' + d).textContent = rem;
+    $('btn' + d).disabled = won || rem === 0;
+  }
+  $('hintCount').textContent = hints;
+}
+
+function select(i){
+  if (won) return;
+  sel = i;
+  render();
+}
+
+function setVal(v){
+  if (won) return;
+  if (sel < 0) { $('status').textContent = 'Сначала выберите клетку'; return; }
+  if (given[sel] || hinted[sel]) return;
+  $('status').textContent = '';
+  grid[sel] = v;
+  checkWin();
+  render();
+}
+
+function checkWin(){
+  if (grid.every((v, i) => v === sol[i])) {
+    won = true;
+    sel = -1;
+    $('status').textContent = 'Поздравляю, судоку решено!';
+  }
+}
+
+// Подсказка: открывает правильную цифру. Подсказок неограниченно.
+function hint(){
+  if (won) return;
+  let i = -1;
+  if (sel >= 0 && !given[sel] && grid[sel] !== sol[sel]) {
+    i = sel;
+  } else {
+    const cand = [];
+    for (let k = 0; k < 81; k++) if (grid[k] !== sol[k]) cand.push(k);
+    if (!cand.length) return;
+    i = cand[Math.floor(Math.random() * cand.length)];
+  }
+  grid[i] = sol[i];
+  hinted[i] = true;
+  hints++;
+  sel = i;
+  $('status').textContent = '';
+  checkWin();
+  render();
+}
+
+// Панель ввода с остатком по каждой цифре
+const pad = $('pad');
+for (let d = 1; d <= 9; d++) {
+  const b = document.createElement('button');
+  b.id = 'btn' + d;
+  b.className = 'num';
+  b.innerHTML = '<b>' + d + '</b><small id="rem' + d + '"></small>';
+  b.onclick = () => setVal(d);
+  pad.appendChild(b);
+}
+const erase = document.createElement('button');
+erase.className = 'num';
+erase.innerHTML = '<b>✕</b><small>стереть</small>';
+erase.onclick = () => setVal(0);
+pad.appendChild(erase);
+
+document.addEventListener('keydown', e => {
+  if (/^[1-9]$/.test(e.key)) setVal(+e.key);
+  else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') setVal(0);
+  else if (sel >= 0 && e.key.startsWith('Arrow')) {
+    const r = (sel / 9) | 0, c = sel % 9;
+    const dr = { ArrowUp: -1, ArrowDown: 1 }[e.key] || 0;
+    const dc = { ArrowLeft: -1, ArrowRight: 1 }[e.key] || 0;
+    const nr = Math.min(8, Math.max(0, r + dr)), nc = Math.min(8, Math.max(0, c + dc));
+    select(nr * 9 + nc);
+    e.preventDefault();
+  }
+});
+
+$('newBtn').onclick = newGame;
+$('hintBtn').onclick = hint;
+$('diff').onchange = newGame;
+
+try { newGame(); } catch (e) { $('status').textContent = 'Ошибка: ' + e.message; }
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+</body>
+</html>
