@@ -1,5 +1,5 @@
 // Кэшируем файлы игры, чтобы она работала без интернета
-const CACHE = 'sudoku-beach-v2';
+const CACHE = 'sudoku-beach-v5';
 const FILES = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
